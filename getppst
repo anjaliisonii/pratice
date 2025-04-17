@@ -1,0 +1,32 @@
+@app.get("/", tags=["Root"])
+async def root():
+    return {
+        "message": "Welcome to SRS to FastAPI Generator API",
+        "docs": "/docs",
+        "version": app.version,
+    }
+
+
+from fastapi import UploadFile, File
+from docx import Document
+from tempfile import NamedTemporaryFile
+
+@app.post("/upload-docx", tags=["SRS Processing"])
+async def upload_docx(file: UploadFile = File(...)):
+    # Save uploaded file to a temp file
+    with NamedTemporaryFile(delete=False, suffix=".docx") as tmp:
+        tmp.write(await file.read())
+        tmp_path = tmp.name
+
+    # Parse the .docx file using python-docx
+    document = Document(tmp_path)
+    full_text = "\n".join([para.text for para in document.paragraphs if para.text.strip()])
+
+    # Return extracted content (you can return full_text if needed)
+    return {
+        "filename": file.filename,
+        "extracted_text_preview": full_text[:1000] + "...",  # Preview of first 1000 characters
+    }
+uvicorn main:app --reload
+
+http://localhost:8000/docs
